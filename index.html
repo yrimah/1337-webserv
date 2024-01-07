@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="style.css">
+    <title>Webserver</title>
+</head>
+
+<body>
+    <div class="container">
+        <canvas id="mycanva"></canvas>
+        <div class="foreground">
+            <div class="wrapper six">
+                <div>
+                    <center><h1 class="flicker">Webserv الخلفاء</h1></center>
+                </div>
+            </div>
+            <div>
+                <img src="1337.png" alt="1337">
+            </div>
+            <menu class="menu">
+                <button href="/" class="tab-btn active">
+                    <i class="fa fa-home"></i>
+                </button>
+                <button onclick="window.location.href='/cgi-bin'" class="tab-btn">
+                    <i class="fas fa-folder-open"></i>
+                </button>
+                <button onclick="window.location.href='upload.html'" class="tab-btn">
+                    <i class="fa fa-upload"></i>
+                </button>
+                <button onclick="window.location.href='/cgi-bin/cookies.php'" class="tab-btn">
+                    <i class="fa fa-cookie-bite"></i>
+                </button>
+                <button onclick="window.location.href='/cgi-bin/login.php'" class="tab-btn">
+                    <i class="fas fa-fingerprint"></i>
+                </button>
+                <button onclick="window.location.href='/cgi-bin/no_permission.php'" class="tab-btn">
+                    <i class="fas fa-ban"></i>
+                </button>
+                <button onclick="window.location.href='/cgi-bin/not_implemented.html'" class="tab-btn">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </button>
+            </menu>
+            <br>
+        </div>
+    </div>
+    <script src="https://kit.fontawesome.com/6120a1ecc7.js" crossorigin="anonymous"></script>
+    <script src="script.js"></script>
+</body>
+</html>
