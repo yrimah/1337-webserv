@@ -15,7 +15,7 @@ def timeout_handler(signum, frame):
 
 signal.signal(signal.SIGALRM, timeout_handler)
 
-signal.alarm(60)
+signal.alarm(30)
 if os.environ.get('REQUEST_METHOD', '') != 'POST':
     print()
     print('<html>')
@@ -43,10 +43,19 @@ random = str(uuid.uuid4())[:8]
 
 filename = os.path.join(upload_dir, random + '_uploaded_file' + os.environ.get('FILE_EXT', ''))
 uploaded_files.append(filename)
-
+#
+chunk_size = 1024 * 1024
+with open(filename, 'wb') as file:
+    while True:
+        data_chunk = sys.stdin.buffer.read(chunk_size)
+        if not data_chunk:
+            break
+        file.write(data_chunk)
+#
 os.rename(os.environ.get('UP_FILE', ''), filename)
+
 if os.path.exists(filename):
-        cur_size += os.path.getsize(filename)
+    cur_size += os.path.getsize(filename)
 
 if cur_size > max_body:
     if os.path.exists(filename):

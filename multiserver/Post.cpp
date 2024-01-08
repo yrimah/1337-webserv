@@ -76,7 +76,7 @@ void server::cgi_exec_post(std::string pathm, int fd)
         }
         else
         {
-            if (((clock() - hand[fd].cgistart) / CLOCKS_PER_SEC) >= 60)
+            if (((clock() - hand[fd].cgistart) / CLOCKS_PER_SEC) >= 30)
             {
                 hand[fd]._cgiwait = false;
                 close(hand[fd].c_in[0]);

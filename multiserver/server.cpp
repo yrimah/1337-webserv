@@ -112,7 +112,6 @@ void server::bindAnd_ListenServers()
         setsockopt(e->first, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
         it->set_sockadde(it->getPort(), it->getHost());
         struct sockaddr_in ServAdd = it->get_sockaddr();
-        std::cout << it->getHost() << " hhhhherrrrre " << it->getPort() << std::endl;
         if (bind(e->first, (const sockaddr *)&ServAdd, sizeof(ServAdd)) < 0)
             throw Filed_bind();
         if (listen(e->first, 3) == -1)
@@ -183,11 +182,14 @@ void server::bindAnd_ListenServers()
                     if (evns[i].events & EPOLLERR || evns[i].events & EPOLLRDHUP || evns[i].events & EPOLLHUP)
                     {
                         close(hand[*etr].indexFile_fd);
-                        kill(hand[*etr]._idcgi, SIGKILL);
-                        waitpid(hand[*etr]._idcgi, &hand[*etr].statuscgi, 0);
-                        close(hand[*etr].c_in[0]);
-                        close(hand[*etr].c_out[1]);
-                        close(hand[*etr].c_out[0]);
+                        if (hand[*etr].check)
+                        {
+                            kill(hand[*etr]._idcgi, SIGTERM);
+                            waitpid(hand[*etr]._idcgi, &hand[*etr].statuscgi, 0);
+                            close(hand[*etr].c_in[0]);
+                            close(hand[*etr].c_out[1]);
+                            close(hand[*etr].c_out[0]);
+                        }
                         if (hand[*etr].dir_is_open)
                             closedir(hand[*etr].dir);
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, *etr, 0);
@@ -419,14 +421,10 @@ void server::RecDelete(const char *path, int fd)
             }
         }
         if (checkDirIsEmpty(path))
-        {
-            std::cout << "============== " << std::endl;
             std::remove(("." + path_delete).c_str());
-        }
     }
     else
     {
-        // std::string path_delete(path);
         if (access(("." + path_delete).c_str(), X_OK) == 0)
         {
 

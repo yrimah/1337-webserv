@@ -39,7 +39,7 @@ uploaded_files = []
 
 form = cgi.FieldStorage()
 
-signal.alarm(60)
+signal.alarm(30)
 if "file_uploaded1" in form:
     fileitem1 = form["file_uploaded1"]
 

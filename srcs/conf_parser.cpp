@@ -146,7 +146,7 @@ void Conf_parser::checkServers()
 	{
 		for (it2 = it1 + 1; it2 != this->servers.end(); it2++)
 		{
-			if (it1->getPort() == it2->getPort() && it1->getHost() == it2->getHost() && it1->getServerName() == it2->getServerName())
+			if (it1->getPort() == it2->getPort() && it1->getHost() == it2->getHost())// && it1->getServerName() == it2->getServerName())
                 throw Server_storage::ExceptionMsg("Duplicated server directive(s)");
 		}
 	}

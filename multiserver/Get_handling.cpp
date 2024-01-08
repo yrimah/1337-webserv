@@ -232,7 +232,6 @@ void server::ReadAnd_SendContent(int fd)
                         hand[fd].dir_is_open = false;
                 }
                 hand.erase(fd);
-                std::cout << "hhhhhhhhhhhhheeeeeeeeeeeeeeeeeerrrrrrrrrrrrrreeee "<<std::endl;
             }
             else if (hand[fd].read_true)
             {
@@ -378,7 +377,6 @@ void server::send_locAutoIndex(int fd, DIR *dir)
             if (closedir(dir))
                 hand[fd].dir_is_open = false;
         hand.erase(fd);
-        std::cout <<"====================== "<<std::endl;
     }
 }
 
@@ -433,7 +431,7 @@ void server::cgi_exec(const char *path, int fd)
     }
     else
     {
-        if (((clock() - hand[fd].cgistart) / CLOCKS_PER_SEC) >= 60)
+        if (((clock() - hand[fd].cgistart) / CLOCKS_PER_SEC) >= 30)
         {
             hand[fd]._cgiwait = false;
             close(hand[fd].c_in[0]);
@@ -562,7 +560,7 @@ void server::Get_F(const char *path, int fd)
         {
             if (Check_Cgi(fd))
             {
-
+                hand[fd].check = true;
                 std::string index;
                 std::vector<Server_storage>::iterator it = serv.getServers().begin();
                 for (; it != serv.getServers().end(); it++)
@@ -633,6 +631,7 @@ void server::Get_F(const char *path, int fd)
         }
         else
         {
+            hand[fd].check = true;
             if (hand[fd].cgi_status)
             {
                 hand[fd].cgi_done = false;
