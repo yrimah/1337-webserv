@@ -3,7 +3,7 @@
 
 void server::sendError(int numEroor, int fd, std::string response, std::string length)
 {
-    response += 
+    response +=
         "Content-Type: text/html\r\n"
         "Content-Length: ";
     response += length;
@@ -83,7 +83,7 @@ void server::cgi_exec_post(std::string pathm, int fd)
                 close(hand[fd].c_out[1]);
                 close(hand[fd].c_out[0]);
 
-                kill(hand[fd]._idcgi, SIGTERM);
+                kill(hand[fd]._idcgi, SIGKILL);
                 waitpid(hand[fd]._idcgi, &hand[fd].statuscgi, 0);
 
                 error = 504;
@@ -145,9 +145,7 @@ void server::cgi_exec_post(std::string pathm, int fd)
                     sendError(413, fd, "HTTP/1.1 413 Content Too Large\r\n", "730");
                 }
                 if (WIFEXITED(hand[fd].statuscgi))
-                {
                     waitpid(hand[fd]._idcgi, &hand[fd].statuscgi, WNOHANG);
-                }
             }
         }
     }
@@ -155,8 +153,6 @@ void server::cgi_exec_post(std::string pathm, int fd)
 
 void server::rest_bady(int fd, std::ofstream &k)
 {
-    (void)fd;
-
     size_t pos = hand[fd].body.find("\r\n");
     if (pos != std::string::npos)
     {
@@ -165,7 +161,11 @@ void server::rest_bady(int fd, std::ofstream &k)
         hand[fd]._read = hand[fd].rest - pos - 2;
         if (hand[fd].numR != 0)
         {
-            if (hand[fd].numR < hand[fd]._read)
+            if (hand[fd].body.find("\r\n0\r\n") != std::string::npos)
+            {
+                k.write(hand[fd].body.substr(pos + 2, hand[fd].body.find("\r\n0\r\n")).c_str(), hand[fd].numR);
+            }
+            else if (hand[fd].numR < hand[fd]._read)
                 k.write(hand[fd].body.substr(pos + 2, hand[fd]._read - 2).c_str(), hand[fd]._read - 2);
             else
                 k.write(hand[fd].body.substr(pos + 2, hand[fd]._read).c_str(), hand[fd]._read);
@@ -462,9 +462,7 @@ void server::PostBoudary(int fd)
                             hand[fd].readflag = true;
                             close(fd);
                             if (WIFEXITED(hand[fd].statuscgi))
-                            {
                                 waitpid(hand[fd]._idcgi, &hand[fd].statuscgi, 0);
-                            }
                             hand.erase(fd);
                         }
                         hand[fd].f = true;
@@ -627,9 +625,7 @@ void server::PostBoudary(int fd)
                                 send(fd, cgi_resp, 527, 0);
                                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, 0);
                                 if (WIFEXITED(hand[fd].statuscgi))
-                                {
                                     waitpid(hand[fd]._idcgi, &hand[fd].statuscgi, 0);
-                                }
                                 close(fd);
                                 hand[fd].flag = false;
                                 hand[fd].readflag = true;
@@ -661,7 +657,7 @@ void server::PostBoudary(int fd)
             }
             else
             {
-                sendError(411, fd,"HTTP/1.1 411 Length Required\r\n", "726");
+                sendError(411, fd, "HTTP/1.1 411 Length Required\r\n", "726");
                 hand[fd].f = true;
             }
         }
@@ -697,20 +693,20 @@ void server::Post(int fd)
                 for (std::vector<Location_storage>::iterator itr2 = itpar->_locations.begin(); itr2 != itpar->_locations.end(); itr2++)
                 {
                     std::string locationPath = GetLocationPath(fd);
-                    if(locationPath.empty())
+                    if (locationPath.empty())
                     {
                         sendError(404, fd, s.NotFond_404, "714");
-                        return ;
+                        return;
                     }
-                    else if(locationPath == "x")
+                    else if (locationPath == "x")
                         locationPath = hand[fd].pathReturn;
-                    if(locationPath == itr2->getLocaPath())
+                    if (locationPath == itr2->getLocaPath())
                     {
                         if (itr2->getLocaAllowedMethods().at(1) == 0)
                             throw std::runtime_error("not allowed method");
                         hand[fd].up_allowed = itr2->getLocaUpallow();
                         hand[fd].pathOfUpload = itr2->getLocaUpdir();
-                        break ;
+                        break;
                     }
                 }
             }
@@ -871,9 +867,7 @@ void server::Post(int fd)
                                 hand[fd].readflag = true;
                                 close(fd);
                                 if (WIFEXITED(hand[fd].statuscgi))
-                                {
                                     waitpid(hand[fd]._idcgi, &hand[fd].statuscgi, 0);
-                                }
                                 hand.erase(fd);
                             }
                             hand[fd].max_body = 0;
@@ -889,7 +883,7 @@ void server::Post(int fd)
         }
         else
         {
-            sendError(403, fd,"HTTP/1.1 403 Forbidden\r\n", "714");
+            sendError(403, fd, "HTTP/1.1 403 Forbidden\r\n", "714");
             hand[fd].postFiles.k.close();
         }
     }
@@ -918,8 +912,8 @@ std::ofstream &server::creat_file(int fd)
         hand[fd].postFiles.k.open(hand[fd].path.c_str(), std::ios::binary);
         hand[fd].pathFile_boundary.push_back(hand[fd].path);
     }
-    else if(it == hand[fd].request_head.end())
-        sendError(400, fd, "HTTP/1.1 400 Bad Request\r\n", "718");\
+    else if (it == hand[fd].request_head.end())
+        sendError(400, fd, "HTTP/1.1 400 Bad Request\r\n", "718");
     else
     {
         hand[fd].notSepportedMedia = false;

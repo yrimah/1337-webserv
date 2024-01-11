@@ -10,10 +10,12 @@
 #include <dirent.h>
 #include <fstream>
 #include "files.hpp"
+#include <cstdlib>
 
 class Request
 {
 public:
+    int check_pathForDelete;
     int checkRequestLine;
     std::string LocaRoot;
     std::string ServRoot;
@@ -110,6 +112,7 @@ public:
 public:
     Request();
     ~Request();
+    void check_path_forDelete(std::string path_forDelete);
     void read_request(char b[]);
     uint16_t Get_port();
     in_addr_t Get_host();

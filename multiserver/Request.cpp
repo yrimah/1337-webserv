@@ -39,9 +39,11 @@ Request::Request()
     cgi_done = false;
     _cgiwait = false;
     store_reverse_host = 0;
+    _idcgi = -2;
     //
     _client_max_body_size = 0;
     max_body = 0;
+    check_pathForDelete = 0;
 
     checkRequestLine = 0;
 }
@@ -64,6 +66,17 @@ void Request::ft_checkRequestLine(std::string check)
         checkRequestLine = 400;
 }
 
+void Request::check_path_forDelete(std::string path_forDelete)
+{
+    char resolvedPath[PATH_MAX];
+    char resolvedPath_root[PATH_MAX];
+    std::string path = "." + path_forDelete;
+    realpath(path.c_str(), resolvedPath);
+    realpath("./", resolvedPath_root);
+    if (std::strncmp(resolvedPath, resolvedPath_root, strlen(resolvedPath_root))!= 0)
+        check_pathForDelete = 1;
+}
+
 void Request::read_request(char b[])
 {
     std::istringstream s(b);
@@ -74,8 +87,11 @@ void Request::read_request(char b[])
         std::istringstream r(read);
         ft_checkRequestLine(read);
         std::getline(r, method, ' ');
-        std::getline(r, path_Get, ' '); 
-        std::getline(r, http_version);
+        std::getline(r, path_Get, ' ');
+        std::getline(r, http_version, '\r');
+        if(path_Get[0] != '/' || http_version != "HTTP/1.1")
+            checkRequestLine = 400;
+        check_path_forDelete(path_Get);
     }
     while (std::getline(s, read, '\n'))
     {

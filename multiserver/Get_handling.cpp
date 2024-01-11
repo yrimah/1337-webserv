@@ -423,11 +423,14 @@ void server::cgi_exec(const char *path, int fd)
     if (!hand[fd]._cgiwait)
         cgi.cgi_executer(hand[fd], error);
     pid_t tmpp = waitpid(hand[fd]._idcgi, &hand[fd].statuscgi, WNOHANG);
-    if (tmpp == hand[fd]._idcgi)
+    if (tmpp)
     {
         hand[fd]._cgiwait = false;
-        close(hand[fd].c_in[0]);
-        close(hand[fd].c_out[1]);
+        if (hand[fd]._idcgi != -2)
+        {
+            close(hand[fd].c_in[0]);
+            close(hand[fd].c_out[1]);
+        }
     }
     else
     {
@@ -438,7 +441,7 @@ void server::cgi_exec(const char *path, int fd)
             close(hand[fd].c_out[1]);
             close(hand[fd].c_out[0]);
 
-            kill(hand[fd]._idcgi, SIGTERM);
+            kill(hand[fd]._idcgi, SIGKILL);
             waitpid(hand[fd]._idcgi, &hand[fd].statuscgi, 0);
 
             error = 504;
@@ -456,7 +459,7 @@ void server::cgi_exec(const char *path, int fd)
             hand[fd].cgi_status = true;
             hand[fd].cgi_done = true;
             hand[fd].cgi_error = true;
-            sendError(500 , fd, s.Internal_server_Error_500, "738");
+            sendError(500, fd, s.Internal_server_Error_500, "738");
         }
         else if (error == 504)
         {

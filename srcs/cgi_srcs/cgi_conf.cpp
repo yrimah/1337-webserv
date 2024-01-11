@@ -133,6 +133,17 @@ int &Cgi_conf::getStatus(void)
     return (this->status);
 }
 
+static ssize_t _write(int fd, const char *buf, size_t _data_size)
+{
+    size_t _total_written = 0;
+    while (_total_written < _data_size)
+    {
+        ssize_t _it_written = write(fd, buf + _total_written, _data_size - _total_written);
+        _total_written += _it_written;
+    }
+    return (_total_written);
+}
+
 void Cgi_conf::cgi_executer(Request &oRequest, int &error)
 {
     if (status == 501)
@@ -203,31 +214,12 @@ void Cgi_conf::cgi_executer(Request &oRequest, int &error)
     {
         if (this->cgi_env["REQUEST_METHOD"] == "POST")
         {
-            size_t _chunk_size = 0;
-
-            if (final.length() <= 1024)
-                _chunk_size = 1024;
-            else
-                _chunk_size = 1024 * 1024;
-
-            size_t _total_written = 0;
-            ssize_t _it_written;
-
-            while (_total_written < final.length())
-            {
-                size_t _unwritten = final.length() - _total_written;
-                size_t _to_write = std::min(_unwritten, _chunk_size);
-
-                _it_written = write(_in[1], final.c_str() + _total_written, _to_write);
-                _total_written += _it_written;
-            }
+            _write(_in[1], final.c_str(), final.length());
             close(_in[0]);
             close(_out[1]);
             waitpid(this->cgi_id, &status, WNOHANG);
             if (WIFEXITED(status))
-            {
                 waitpid(this->cgi_id, &status, WNOHANG);
-            }
         }
         close(_in[1]);
 

@@ -101,7 +101,7 @@ void server::bindAnd_ListenServers()
 {
     signal(SIGPIPE, SIG_IGN);
     int opt = -1;
-    int num_evn, client_socket;
+    int num_evn = 0, client_socket;
     struct epoll_event evns[MAX_EVN];
 
     if ((epoll_fd = epoll_create(MAX_EVN)) < 0)
@@ -124,7 +124,7 @@ void server::bindAnd_ListenServers()
     }
     stor_code_statusFiles();
     Store_extention();
-    while (1)
+    while (true)
     {
         try
         {
@@ -132,7 +132,6 @@ void server::bindAnd_ListenServers()
                 throw Filed_epoll();
             for (int i = 0; i < num_evn; i++)
             {
-
                 if (serversMap.find(evns[i].data.fd) != serversMap.end())
                 {
                     try
@@ -143,15 +142,13 @@ void server::bindAnd_ListenServers()
                         }
                         else
                         {
-
                             std::pair<uint16_t, in_addr_t> &getpair = serversMap[evns[i].data.fd];
                             hand[client_socket].port = getpair.first;
                             hand[client_socket].host = getpair.second;
                             std::vector<Server_storage>::iterator it_serv = serv.getServers().begin();
                             for (; it_serv != serv.getServers().end(); it_serv++)
                             {
-                                if (it_serv->getHost() == hand[client_socket].host
-                                    && it_serv->getPort() == hand[client_socket].port)
+                                if (it_serv->getHost() == hand[client_socket].host && it_serv->getPort() == hand[client_socket].port)
                                     hand[client_socket].store_reverse_host = it_serv->_reverse_host;
                             }
                             client_fd.push_back(client_socket);
@@ -167,8 +164,8 @@ void server::bindAnd_ListenServers()
                     }
                     catch (const std::exception &e)
                     {
-                        (void)e;
-                        // std::cerr << e.what() << std::endl;
+                        //(void)e;
+                        std::cerr << e.what() << std::endl;
                     }
                 }
                 else
@@ -184,7 +181,7 @@ void server::bindAnd_ListenServers()
                         close(hand[*etr].indexFile_fd);
                         if (hand[*etr].check)
                         {
-                            kill(hand[*etr]._idcgi, SIGTERM);
+                            kill(hand[*etr]._idcgi, SIGKILL);
                             waitpid(hand[*etr]._idcgi, &hand[*etr].statuscgi, 0);
                             close(hand[*etr].c_in[0]);
                             close(hand[*etr].c_out[1]);
@@ -297,12 +294,12 @@ std::string server::get_path(int fd)
                     if (hand[fd].method == "DELETE")
                     {
                         if (itr->getLocaAllowedMethods().at(2) == 0)
-                            throw std::runtime_error("not alowed method");
+                            throw std::runtime_error("not allowed method");
                     }
                     else if (hand[fd].method == "GET")
                     {
                         if (itr->getLocaAllowedMethods().at(0) == 0)
-                            throw std::runtime_error("not alowed method");
+                            throw std::runtime_error("not allowed method");
                     }
                     std::string p = itr->getLocaRoot();
                     if (!p.empty())
@@ -348,9 +345,14 @@ std::string server::GetLocationPath(int fd)
                 if (dir)
                 {
 
-                    hand[fd].pathReturn = "/" + pathHold;
+                    hand[fd].pathReturn = hand[fd].path_Get;
                     closedir(dir);
-                    return "x";
+                    if (hand[fd].method == "GET")
+                    {
+                        return "x";
+                    }
+                    else
+                        return hand[fd].pathReturn;
                 }
                 else
                     return ("/");
@@ -365,7 +367,10 @@ std::string server::GetLocationPath(int fd)
                 {
                     hand[fd].pathReturn = "/" + pathHold;
                     closedir(dir);
-                    return "x";
+                    if (hand[fd].method == "GET")
+                        return "x";
+                    else
+                        return hand[fd].pathReturn;
                 }
                 else
                     return ("/");
@@ -385,7 +390,7 @@ std::string server::GetLocationPath(int fd)
 bool checkDirIsEmpty(const char *path)
 {
     std::string path_delete(path);
-    DIR *dir = opendir(("." + path_delete).c_str());
+    DIR *dir = opendir((path_delete).c_str());
     if (dir)
     {
         struct dirent *centent;
@@ -405,8 +410,7 @@ bool checkDirIsEmpty(const char *path)
 
 void server::RecDelete(const char *path, int fd)
 {
-    std::string path_delete(path);
-    DIR *dir = opendir(("." + path_delete).c_str());
+    DIR *dir = opendir((path));
     if (dir)
     {
         struct dirent *centent;
@@ -421,15 +425,15 @@ void server::RecDelete(const char *path, int fd)
             }
         }
         if (checkDirIsEmpty(path))
-            std::remove(("." + path_delete).c_str());
+            std::remove(path);
     }
     else
     {
-        if (access(("." + path_delete).c_str(), X_OK) == 0)
+        if (access(path, X_OK) == 0)
         {
 
-            std::remove(("." + path_delete).c_str());
-            send(fd, s.NoContent_204.c_str(), s.NoContent_204.length(), 0);
+            std::remove(path);
+            // send(fd, s.NoContent_204.c_str(), s.NoContent_204.length(), 0);
         }
         else
             sendError(403, fd, s.Forbidden_403, "714");
@@ -442,20 +446,36 @@ void server::Delete_handling(int fd)
 {
     try
     {
-        std::string path = get_path(fd);
-        if (path.empty())
+        if (hand[fd].check_pathForDelete == 0)
         {
-            sendError(404, fd, s.NotFond_404, "714");
-            return;
-        }
-        if (path == "x")
-            path = hand[fd].pathReturn;
-        if (access(("." + path).c_str(), F_OK) != 0)
-        {
-            sendError(404, fd, s.NotFond_404, "714");
+            std::string path = get_path(fd);
+            if (path.empty())
+            {
+                if (hand[fd].path_Get.empty())
+                {
+                    sendError(404, fd, s.NotFond_404, "714");
+                    return;
+                }
+                else
+                    path = hand[fd].path_Get;
+            }
+            if (path == "x")
+                path = hand[fd].pathReturn;
+            if (path[0] != '.')
+                path.insert(0, ".");
+            if (access((path).c_str(), F_OK) != 0)
+            {
+                sendError(404, fd, s.NotFond_404, "714");
+            }
+            else
+            {
+                RecDelete(path.c_str(), fd);
+                if (access((path).c_str(), F_OK) != 0)
+                    send(fd, s.NoContent_204.c_str(), s.NoContent_204.length(), 0);
+            }
         }
         else
-            RecDelete(path.c_str(), fd);
+            sendError(403, fd, s.Forbidden_403, "714");
     }
     catch (const std::exception &e)
     {
